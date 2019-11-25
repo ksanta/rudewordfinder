@@ -16,12 +16,16 @@ import java.util.stream.Stream;
 @Getter
 public class RudeWordFinder {
 
+    private static final String SNIP_CHARACTER = "|";
+
     private List<String> rudeWords;
 
     public RudeWordFinder() {
         try {
             Path path = Paths.get(getClass().getClassLoader().getResource("rude_word_list.txt").toURI());
-            Stream<String> lines = Files.lines(path).map(s -> s.replace(" ", ""));
+            Stream<String> lines = Files.lines(path)
+                    .map(s -> s.replace(" ", ""))
+                    .map(String::toLowerCase);
             rudeWords = lines.collect(Collectors.toList());
             lines.close();
         } catch (IOException | URISyntaxException e) {
@@ -33,7 +37,7 @@ public class RudeWordFinder {
     public List<String> find(List<String> inputWords) {
         List<String> results = new ArrayList<>();
         
-        inputWords = splitSpacesFromInputWords(inputWords);
+        inputWords = cleanInputWords(inputWords);
 
         for (String rudeWord : rudeWords) {
             // match() will mangle inputWords, so send in a fresh copy of it every time
@@ -47,11 +51,13 @@ public class RudeWordFinder {
     }
 
     /**
-     * This will search input words for spaces and split them into separate words
+     * This will search input words for spaces and split them into separate words.  This will lowercase all the input
+     * words.
      */
-    private List<String> splitSpacesFromInputWords(List<String> inputWords) {
+    private List<String> cleanInputWords(List<String> inputWords) {
         List<String> splitWords = new ArrayList<>();
         for (String inputWord : inputWords) {
+            inputWord = inputWord.toLowerCase();
             if (inputWord.contains(" ")) {
                 splitWords.addAll(Arrays.asList(inputWord.split(" ")));
             } else {
@@ -70,52 +76,62 @@ public class RudeWordFinder {
      * @return a string representing how to build up the target word, or null if it cannot be built
      */
     private String match(String rudeWord, List<String> inputWords) {
-        // Try and find a match from the whole word, then try shorter and short lengths, scanning across the word
-        for (int rudeWordSearchLength = rudeWord.length(); rudeWordSearchLength >= 1; rudeWordSearchLength--) {
-            int startIndex = 0;
-            while (startIndex + rudeWordSearchLength <= rudeWord.length()) {
-                String rudeWordFragment = rudeWord.substring(startIndex, startIndex + rudeWordSearchLength);
-
-                boolean foundMatch = scanInputWordsForMatch(inputWords, rudeWordFragment);
-
-                if (foundMatch) {
-                    StringBuilder sb = new StringBuilder();
-
-                    // Recursive call for any portions of the rude word not covered by the rude word fragment
-                    if (startIndex > 0) {
-                        String prefixMatches = match(rudeWord.substring(0, startIndex), inputWords);
-                        if (prefixMatches == null) {
-                            startIndex++;
-                            continue;
-                        }
-                        sb.append(prefixMatches).append("+");
-                    }
-
-                    sb.append(rudeWordFragment);
-
-                    if (startIndex + rudeWordSearchLength < rudeWord.length()) {
-                        String suffixMatches = match(rudeWord.substring(startIndex + rudeWordSearchLength), inputWords);
-                        if (suffixMatches == null) {
-                            startIndex++;
-                            continue;
-                        }
-                        sb.append("+").append(suffixMatches);
-                    }
-
-                    return sb.toString();
+        // Define the length of the sliding window, going from whole word legnth to single character
+        for (int rudeWordWindowLength = rudeWord.length(); rudeWordWindowLength >= 1; rudeWordWindowLength--) {
+            // Slide the window across the rude word
+            for (int startIndex = 0; startIndex + rudeWordWindowLength <= rudeWord.length(); startIndex++ ) {
+                String rudeWordBuiltFromInputWords = findMatchesForRudeWordWindow(rudeWord, startIndex, rudeWordWindowLength, inputWords);
+                if (rudeWordBuiltFromInputWords != null) {
+                    return rudeWordBuiltFromInputWords;
                 }
-
-                startIndex++;
             }
         }
-
+        // Rude word has no matches
         return null;
     }
 
-    private boolean scanInputWordsForMatch(List<String> inputWords, String rudeWordFragment) {
+    private String findMatchesForRudeWordWindow(String rudeWord, int windowStartIndex, int windowLength, List<String> inputWords) {
+        String windowContent = rudeWord.substring(windowStartIndex, windowStartIndex + windowLength);
+
+        boolean matchFound = matchAndSnipInputWords(inputWords, windowContent);
+
+        if (!matchFound) {
+            return null;
+        }
+
+        StringBuilder rudeWordBuiltFromInputs = new StringBuilder();
+
+        // Recursive call for any portions of the rude word not covered by the rude word fragment
+        if (windowStartIndex > 0) {
+            String fragmentBeforeWindow = match(rudeWord.substring(0, windowStartIndex), inputWords);
+            if (fragmentBeforeWindow == null) {
+                return null;
+            }
+            rudeWordBuiltFromInputs.append(fragmentBeforeWindow).append(SNIP_CHARACTER);
+        }
+
+        rudeWordBuiltFromInputs.append(windowContent);
+
+        if (windowStartIndex + windowLength < rudeWord.length()) {
+            String fragmentAfterWindow = match(rudeWord.substring(windowStartIndex + windowLength), inputWords);
+            if (fragmentAfterWindow == null) {
+                return null;
+            }
+            rudeWordBuiltFromInputs.append(SNIP_CHARACTER).append(fragmentAfterWindow);
+        }
+
+        return rudeWordBuiltFromInputs.toString();
+    }
+
+    /**
+     * Searches input words for the given fragment. If found, will remove the fragment portion from the input word and
+     * return true
+     * @return true if a match was made and the input words list was updated to remove the matched portion
+     */
+    private boolean matchAndSnipInputWords(List<String> inputWords, String fragmentToMatch) {
         for (String inputWord : inputWords) {
-            if (inputWord.contains(rudeWordFragment)) {
-                updateInputWords(inputWords, rudeWordFragment, inputWord);
+            if (inputWord.contains(fragmentToMatch)) {
+                updateInputWords(inputWords, fragmentToMatch, inputWord);
                 return true;
             }
         }

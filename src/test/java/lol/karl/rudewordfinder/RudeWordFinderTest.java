@@ -49,13 +49,23 @@ public class RudeWordFinderTest {
     }
 
     @Test
+    public void testtMatchUppercase() {
+        List<String> inputWords = Collections.singletonList("SEX");
+
+        RudeWordFinder finder = new RudeWordFinder();
+        List<String> results = finder.find(inputWords);
+        log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
+        assertTrue(results.contains("sex"));
+    }
+
+    @Test
     public void testTwoMatch() {
         List<String> inputWords = Arrays.asList("an", "al");
 
         RudeWordFinder finder = new RudeWordFinder();
         List<String> results = finder.find(inputWords);
         log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
-        assertTrue(results.contains("an+al"));
+        assertTrue(results.contains("an|al"));
     }
 
     @Test
@@ -65,7 +75,7 @@ public class RudeWordFinderTest {
         RudeWordFinder finder = new RudeWordFinder();
         List<String> results = finder.find(inputWords);
         log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
-        assertTrue(results.contains("an+al"));
+        assertTrue(results.contains("an|al"));
     }
 
     @Test
@@ -74,9 +84,9 @@ public class RudeWordFinderTest {
 
         RudeWordFinder finder = new RudeWordFinder();
         List<String> results = finder.find(inputWords);
-        assertTrue(results.contains("finger+ing"));
+        assertTrue(results.contains("finger|ing"));
         log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
-        assertTrue(results.contains("n+i+g+ger"));
+        assertTrue(results.contains("n|i|g|ger"));
     }
 
     @Test
@@ -86,7 +96,7 @@ public class RudeWordFinderTest {
         RudeWordFinder finder = new RudeWordFinder();
         List<String> results = finder.find(inputWords);
         log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
-        assertTrue(results.contains("foot+fetish"));
+        assertTrue(results.contains("foot|fetish"));
     }
 
     @Test
@@ -96,7 +106,7 @@ public class RudeWordFinderTest {
         RudeWordFinder finder = new RudeWordFinder();
         List<String> results = finder.find(inputWords);
         log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
-        assertTrue(results.contains("foot+fetish"));
+        assertTrue(results.contains("foot|fetish"));
     }
 
     @Test
@@ -106,6 +116,6 @@ public class RudeWordFinderTest {
         RudeWordFinder finder = new RudeWordFinder();
         List<String> results = finder.find(inputWords);
         log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
-        assertFalse(results.contains("n+i+g+ger"));
+        assertFalse(results.contains("n|i|g|ger"));
     }
 }
