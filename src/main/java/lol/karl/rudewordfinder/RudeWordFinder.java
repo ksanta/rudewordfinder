@@ -37,17 +37,30 @@ public class RudeWordFinder {
     public List<String> find(List<String> inputWords) {
         List<String> results = new ArrayList<>();
         
-        inputWords = cleanInputWords(inputWords);
+        List<String> cleanedInputWords = cleanInputWords(inputWords);
 
         for (String rudeWord : rudeWords) {
             // match() will mangle inputWords, so send in a fresh copy of it every time
-            String match = match(rudeWord, new ArrayList<>(inputWords));
+            String match = match(rudeWord, new ArrayList<>(cleanedInputWords));
             if (match != null) {
                 results.add(match);
             }
         }
 
+        // Apply ordering: move longer running fragments to the front, single character builds to the back
+        results.sort(Comparator.comparingInt(this::longestFragmentLength).reversed());
+
         return results;
+    }
+
+    private int longestFragmentLength(String word) {
+        int longestLength = 0;
+        for (String inputWordFragment : word.split("\\"+ SNIP_CHARACTER)) {
+            if (inputWordFragment.length() > longestLength) {
+                longestLength = inputWordFragment.length();
+            }
+        }
+        return longestLength;
     }
 
     /**
