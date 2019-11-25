@@ -8,9 +8,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,6 +32,8 @@ public class RudeWordFinder {
     // This is the driver method
     public List<String> find(List<String> inputWords) {
         List<String> results = new ArrayList<>();
+        
+        inputWords = splitSpacesFromInputWords(inputWords);
 
         for (String rudeWord : rudeWords) {
             // match() will mangle inputWords, so send in a fresh copy of it every time
@@ -44,6 +44,21 @@ public class RudeWordFinder {
         }
 
         return results;
+    }
+
+    /**
+     * This will search input words for spaces and split them into separate words
+     */
+    private List<String> splitSpacesFromInputWords(List<String> inputWords) {
+        List<String> splitWords = new ArrayList<>();
+        for (String inputWord : inputWords) {
+            if (inputWord.contains(" ")) {
+                splitWords.addAll(Arrays.asList(inputWord.split(" ")));
+            } else {
+                splitWords.add(inputWord);
+            }
+        }
+        return splitWords;
     }
 
     /**

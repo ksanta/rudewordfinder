@@ -14,6 +14,16 @@ import static org.junit.Assert.*;
 public class RudeWordFinderTest {
 
     @Test
+    public void testAdhoc() {
+        // Just curious and want to give some random words a go? Here is your chance!
+        List<String> inputWords = Arrays.asList("mars", "crunchy", "snickers", "picnic", "maltesers");
+
+        RudeWordFinder finder = new RudeWordFinder();
+        List<String> results = finder.find(inputWords);
+        log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
+    }
+
+    @Test
     public void testRudeWordsLoadCorrectly() {
         RudeWordFinder finder = new RudeWordFinder();
         assertThat(finder.getRudeWords().isEmpty(), is(false));
@@ -70,8 +80,18 @@ public class RudeWordFinderTest {
     }
 
     @Test
-    public void testMatchResultsWithSpaces() {
+    public void testMatchRudeWordWithSpaces() {
         List<String> inputWords = Arrays.asList("foot", "fetish");
+
+        RudeWordFinder finder = new RudeWordFinder();
+        List<String> results = finder.find(inputWords);
+        log.debug("Input {} contains rude words {}", inputWords.toString(), results.toString());
+        assertTrue(results.contains("foot+fetish"));
+    }
+
+    @Test
+    public void testSplitInputWordWithSpaces() {
+        List<String> inputWords = Collections.singletonList("foot fetish");
 
         RudeWordFinder finder = new RudeWordFinder();
         List<String> results = finder.find(inputWords);
